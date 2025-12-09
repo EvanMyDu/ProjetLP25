@@ -5,17 +5,17 @@ EXEC = GestionRessources
 CC = gcc
 
 #Options de compilation
-CFLAGS =-Wall -Wextra -Werror -g -Iinclude
+CFLAGS =-Wall -Wextra -Werror -g -Iheader -Isrc
 #Fichiers sources
-SRCS=$(wildcard *.c)
+SRCS=$(wildcard src/*.c) main.c
 
- OBJS := $(patsubst %.c,%.o,$(SRCS))
+ OBJS := $(patsubst src/%.c,obj/%.o,$(SRCS))
 
  all: $(EXEC)
  $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ -lncurses
 
- %.o: %.c
+ obj/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
  clean:
