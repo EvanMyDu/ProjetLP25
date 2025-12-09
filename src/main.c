@@ -4,8 +4,8 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#include "../header/manager.h"
 #include "../header/ui.h"
-#include "../header/process.h"
 
 typedef struct program_options {
     int show_help;
@@ -20,20 +20,6 @@ typedef struct program_options {
     int all;
 } program_options_t;
 
-void print_help(void) {
-    printf("Usage: ./lp25 [options]\n\n");
-    printf("Options:\n");
-    printf("  -h, --help                 Affiche cette aide\n");
-    printf("  --dry-run                  Test sans affichage\n");
-    printf("  -c, --remote-config FILE   Configuration distante\n");
-    printf("  -t, --connexion-type TYPE  Type de connexion\n");
-    printf("  -P, --port PORT            Port de connexion\n");
-    printf("  -l, --login user@host      Login distant\n");
-    printf("  -s, --remote-server HOST   Serveur distant\n");
-    printf("  -u, --username USER        Nom d'utilisateur\n");
-    printf("  -p, --password PASS        Mot de passe\n");
-    printf("  -a, --all                  Local + distant\n");
-}
 
 int main(int argc, char **argv) {
     program_options_t options;
@@ -95,69 +81,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (options.show_help) {
-        print_help();
-        return 0;
-    }
-
     if (options.dry_run) {
         printf("Mode test activé\n");
         return 0;
     }
-
-    // Initialisation
-    process_info_t *process_list = NULL;
-    int process_count = 0;
-    ui_init();
-
-    int running = 1;
-    int refresh_counter = 0;
-
-    while (running) {
-        // Rafraîchir la liste toutes les 10 itérations
-        if (refresh_counter % 10 == 0) {
-            process_info_t *new_list = NULL;
-            int new_count = 0;
-
-            if (get_process_list(&new_list, &new_count) == 0) {
-                if (process_list) free(process_list);
-                process_list = new_list;
-                process_count = new_count;
-            }
-        }
-
-        // Affichage
-        ui_draw_processes(process_list, process_count);
-
-        // Gestion des touches
-        ui_action_t action = ui_get_action();
-        switch (action) {
-            case UI_ACTION_QUIT:
-                running = 0;
-                break;
-
-            case UI_ACTION_HELP:
-                ui_show_help();
-                break;
-
-            case UI_ACTION_SEARCH: {
-                char buffer[256];
-                ui_show_search(buffer, sizeof(buffer));
-                break;
-            }
-
-            default:
-                // Les flèches sont gérées dans ui_get_action()
-                break;
-        }
-
-        refresh_counter++;
-        usleep(50000);  // 50ms de pause
-    }
-
-    // Nettoyage
-    if (process_list) free(process_list);
-    ui_cleanup();
-
+    manager(options.show_help);
     return 0;
 }

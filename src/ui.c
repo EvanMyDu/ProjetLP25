@@ -5,6 +5,21 @@
 static int selected_index = 0;
 static int scroll_offset = 0;
 
+void ui_draw_help(void) {
+    ui_draw_header();
+    mvprintw(1,0,"Options:");
+    mvprintw(2,0,"  -h, --help                 Affiche cette aide");
+    mvprintw(4,0,"  --dry-run                  Test sans affichage");
+    mvprintw(6,0,"  -c, --remote-config FILE   Configuration distante");
+    mvprintw(8,0,"  -t, --connexion-type TYPE  Type de connexion");
+    mvprintw(10,0,"  -P, --port PORT            Port de connexion");
+    mvprintw(12,0,"  -l, --login user@host      Login distant");
+    mvprintw(14,0,"  -s, --remote-server HOST   Serveur distant");
+    mvprintw(16,0,"  -u, --username USER        Nom d'utilisateur");
+    mvprintw(18,0,"  -p, --password PASS        Mot de passe");
+    mvprintw(20,0,"  -a, --all                  Local + distant");
+}
+
 void ui_init(void) {
     initscr();
     noecho();
@@ -119,9 +134,18 @@ ui_action_t ui_get_action(void) {
         case KEY_F(1): return UI_ACTION_HELP;
         case KEY_F(4): return UI_ACTION_SEARCH;
         case KEY_F(5): return UI_ACTION_PAUSE;
-        case KEY_F(6): return UI_ACTION_STOP;
+        case KEY_F(6): return UI_ACTION_RESUME;
         case KEY_F(7): return UI_ACTION_KILL;
         case KEY_F(8): return UI_ACTION_RESTART;
+
+        //cases de test
+        case 'p': return UI_ACTION_PAUSE;
+        case 'r': return UI_ACTION_RESTART;
+        case 'k': return UI_ACTION_KILL;
+        case 's': return UI_ACTION_RESUME;
+        case 'h': return UI_ACTION_HELP;
+        case 'f': return UI_ACTION_SEARCH;
+
         case 'q':
         case 'Q': return UI_ACTION_QUIT;
 

@@ -1,7 +1,6 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#include <sys/types.h>
 
 /* Structure d'un processus */
 typedef struct process_info {
