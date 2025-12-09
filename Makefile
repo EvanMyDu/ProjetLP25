@@ -7,7 +7,7 @@ CC = gcc
 #Options de compilation
 CFLAGS =-Wall -Wextra -Werror -g -Iheader -Isrc
 #Fichiers sources
-SRCS=$(wildcard src/*.c) main.c
+SRCS=$(wildcard src/*.c)
 
  OBJS := $(patsubst src/%.c,obj/%.o,$(SRCS))
 

@@ -2,11 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/**
- * Fonction principale du gestionnaire
- * @param dry_run Mode test sans effectuer d'actions réelles
- */
 void manager_run(int dry_run) {
     if (dry_run) {
         printf("[DRY RUN] Mode test activé - Aucune action ne sera exécutée\n");
