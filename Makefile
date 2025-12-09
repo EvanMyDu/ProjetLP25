@@ -5,28 +5,19 @@ EXEC = GestionRessources
 CC = gcc
 
 #Options de compilation
-CFLAGS = -Wall -Wextra -Werror -g -Isrc
+CFLAGS =-Wall -Wextra -Werror -g -Iinclude
+#Fichiers sources
+SRCS=$(wildcard *.c)
 
-#Librairies à l'édition des liens
-LDFLAGS = -lncurses
+ OBJS := $(patsubst %.c,%.o,$(SRCS))
 
-#Fichier sources
-SRCS = main.c \
-	   ui.c \
-	   manager.c \
-	   process.c \
-	   options.c \
-
-#Fichiers objets
-OBJS = $(SRCS:.c=.o)
- #Cibke par défaut
  all: $(EXEC)
+ $(EXEC): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ -lncurses
 
- #Création de l'executable
- $(EXEC): $(OBJS) $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+ %.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
- #Compilation des .c en .o
- %.o: %.c $(CC) $(CFLAGS) -c $< -o $@
+ clean:
+	rm -f $(OBJS) $(EXEC)
 
- #Nettoyage
- clean: rm -f $(OBJS)

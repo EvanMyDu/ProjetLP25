@@ -8,3 +8,7 @@ git commit -m "le message" //fait un commit avec le message choisis
 git push origin main //push le commit sur le main
 
 git pull origin main //pull les modifications faites sur le main
+
+
+make pour lancer
+make clean pour supprimer les objets
