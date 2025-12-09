@@ -1,22 +1,17 @@
-//
-// Created by evanmd25 on 2025-12-08.
-//
-
 #include "ui.h"
 #include <ncurses.h>
 #include <string.h>
 
 static int selected_index = 0;
+static int scroll_offset = 0;
 
-/* =============================
- * Initialisation / nettoyage
- * ============================= */
 void ui_init(void) {
     initscr();
     noecho();
     cbreak();
     keypad(stdscr, TRUE);
     curs_set(0);
+    timeout(100);
     refresh();
 }
 
@@ -24,49 +19,101 @@ void ui_cleanup(void) {
     endwin();
 }
 
-/* =============================
- * Affichage
- * ============================= */
 void ui_draw_header(void) {
     attron(A_REVERSE);
-    mvprintw(0, 0,
-    " Localhost | F1 Help | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
+    mvprintw(0, 0, " Localhost | F1 Help | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
     attroff(A_REVERSE);
-    clrtoeol();
+}
+
+// Fonction pour lire mémoire totale
+static long get_total_memory_kb(void) {
+    static long total_memory = 0;
+    if (total_memory == 0) {
+        FILE *f = fopen("/proc/meminfo", "r");
+        if (f) {
+            char line[256];
+            while (fgets(line, sizeof(line), f)) {
+                if (strstr(line, "MemTotal:")) {
+                    sscanf(line, "MemTotal: %ld kB", &total_memory);
+                    break;
+                }
+            }
+            fclose(f);
+        }
+    }
+    return total_memory;
 }
 
 void ui_draw_processes(process_info_t *list, int count) {
-    clear();
+    erase();
     ui_draw_header();
 
-    mvprintw(2, 0, "PID     NAME                CPU     MEM     TIME");
-    mvprintw(3, 0, "--------------------------------------------------");
+    long total_memory_kb = get_total_memory_kb();
 
-    for (int i = 0; i < count; i++) {
-        if (i == selected_index) {
-            attron(A_REVERSE);
+    mvprintw(2, 0, "PID     NAME                CPU(percent)   MEM(percent)    TIME(s)");
+    mvprintw(3, 0, "------------------------------------------------------");
+
+    int screen_height = LINES - 4;
+    if (screen_height <= 0) return;
+
+    // Corriger selected_index
+    if (count > 0) {
+        if (selected_index >= count) selected_index = count - 1;
+        if (selected_index < 0) selected_index = 0;
+    }
+
+    // Ajuster le scroll
+    if (selected_index < scroll_offset) {
+        scroll_offset = selected_index;
+    } else if (selected_index >= scroll_offset + screen_height) {
+        scroll_offset = selected_index - screen_height + 1;
+    }
+
+    // Afficher les processus visibles
+    int start = scroll_offset;
+    int end = scroll_offset + screen_height;
+    if (end > count) end = count;
+
+    for (int i = start; i < end; i++) {
+        int screen_line = 4 + (i - scroll_offset);
+
+        if (i == selected_index) attron(A_REVERSE);
+
+        // Calculer % mémoire à la volée
+        float memory_percent = 0.0;
+        if (total_memory_kb > 0 && list[i].memory_kb > 0) {
+            memory_percent = (list[i].memory_kb * 100.0) / total_memory_kb;
         }
 
-        mvprintw(4 + i, 0, "%-7d %-18s %5.1f%% %5.1f%% %ld",
-        list[i].pid,
-        list[i].name,
-        list[i].cpu,
-        list[i].memory,
-        list[i].time);
+        mvprintw(screen_line, 0, "%-7d %-18s %6.1f%% %7.2f%% %8.1f",
+                list[i].pid,
+                list[i].name,
+                list[i].cpu_percent,
+                memory_percent,   // %.2f pour 2 décimales (mémoire change peu)
+                list[i].time);
 
-        if (i == selected_index) {
-            attroff(A_REVERSE);
-        }
+        if (i == selected_index) attroff(A_REVERSE);
+    }
+
+    // Afficher mémoire totale en bas
+    if (total_memory_kb > 0) {
+        float total_memory_gb = total_memory_kb / 1024.0 / 1024.0;
+        mvprintw(LINES - 1, COLS - 30, "RAM: %.1f GB", total_memory_gb);
+    }
+
+    // Indicateurs de scroll
+    if (scroll_offset > 0) {
+        mvprintw(LINES - 1, 0, "↑ %d+", scroll_offset);
+    } else if (end < count) {
+        mvprintw(LINES - 1, 0, "%d+ ↓", count - end);
     }
 
     refresh();
 }
 
-/* =============================
- * Gestion clavier
- * ============================= */
 ui_action_t ui_get_action(void) {
     int ch = getch();
+    if (ch == ERR) return UI_ACTION_NONE;
 
     switch (ch) {
         case KEY_F(1): return UI_ACTION_HELP;
@@ -79,52 +126,48 @@ ui_action_t ui_get_action(void) {
         case 'Q': return UI_ACTION_QUIT;
 
         case KEY_UP:
-            if (selected_index > 0)
-                selected_index--;
-            break;
+            if (selected_index > 0) selected_index--;
+            return UI_ACTION_NONE;
 
         case KEY_DOWN:
             selected_index++;
-            break;
+            return UI_ACTION_NONE;
 
         default:
-            break;
+            return UI_ACTION_NONE;
     }
-
-    return UI_ACTION_NONE;
 }
 
 int ui_get_selected_index(void) {
     return selected_index;
 }
 
-/* =============================
- * Fenêtres secondaires
- * ============================= */
 void ui_show_help(void) {
+    timeout(-1);
     clear();
     mvprintw(2, 2, "Aide - Raccourcis clavier");
-    mvprintw(4, 4, "F1  : Afficher l'aide");
-    mvprintw(5, 4, "F4  : Rechercher un processus");
-    mvprintw(6, 4, "F5  : Mettre en pause un processus");
-    mvprintw(7, 4, "F6  : Arreter un processus");
-    mvprintw(8, 4, "F7  : Tuer un processus");
-    mvprintw(9, 4, "F8  : Redemarrer un processus");
-    mvprintw(11,4, "Q   : Quitter");
-
-    mvprintw(13,4, "Appuyez sur une touche pour revenir...");
+    mvprintw(4, 4, "F1  : Aide");
+    mvprintw(5, 4, "F4  : Rechercher");
+    mvprintw(6, 4, "F5  : Pause");
+    mvprintw(7, 4, "F6  : Stop");
+    mvprintw(8, 4, "F7  : Kill");
+    mvprintw(9, 4, "F8  : Restart");
+    mvprintw(10,4, "↑↓  : Naviguer");
+    mvprintw(13,4, "Q   : Quitter");
     refresh();
     getch();
+    timeout(100);
 }
 
 void ui_show_search(char *buffer, int maxlen) {
+    timeout(-1);
     echo();
     curs_set(1);
 
-    mvprintw(LINES - 2, 0, "Recherche : ");
-    clrtoeol();
+    mvprintw(LINES - 2, 0, "Recherche: ");
     getnstr(buffer, maxlen);
 
     noecho();
     curs_set(0);
+    timeout(100);
 }
