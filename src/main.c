@@ -3,7 +3,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "manager.h"
+#include "../header/manager.h"
 
 typedef struct program_options {
 	int show_help;
