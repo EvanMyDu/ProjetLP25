@@ -22,7 +22,7 @@ typedef struct program_options {
 } program_options_t;
 
 /* Affichage de l'aide */
-static void print_help(void) {
+void print_help(void) {
 	printf("Usage: ./lp25 [options]\n\n");
 	printf("Options disponibles :\n");
 	printf("  -h, --help                 Affiche cette aide\n");
