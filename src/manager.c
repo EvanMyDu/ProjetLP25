@@ -6,14 +6,12 @@
 #include "../header/process.h"
 #include "ncurses.h"
 
-void manager_run(int dry_run) {
-    if (dry_run) {
+void manager_run() {
         printf("[DRY RUN] Mode test activé - Aucune action ne sera exécutée\n");
         printf("[DRY RUN] Simulation de l'accès aux processus...\n");
         printf("[DRY RUN] Connexion aux services distants simulée\n");
         printf("[DRY RUN] Opération terminée avec succès (mode test)\n");
         return;
-    }
 }
 
 int get_selected_pid(process_info_t *list, int count) {
