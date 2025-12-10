@@ -6,6 +6,13 @@
 #include "../header/process.h"
 #include "ncurses.h"
 
+/**
+* @brief Exécute le programme en mode test (dry-run)
+*
+* Cette fonction simule l'exécution du programme sans effectuer d'actions réelles.
+* Elle affiche des messages de simulation pour indiquer ce qui serait normalement
+* exécuté en mode réel.
+*/
 void manager_run() {
         printf("[DRY RUN] Mode test activé - Aucune action ne sera exécutée\n");
         printf("[DRY RUN] Simulation de l'accès aux processus...\n");
@@ -14,6 +21,16 @@ void manager_run() {
         return;
 }
 
+/**
+* @brief Récupère le PID du processus sélectionné dans l'interface
+*
+* Cette fonction utilise l'index sélectionné dans l'interface utilisateur
+* pour retourner le PID correspondant dans la liste des processus.
+*
+* @param list Tableau des informations sur les processus
+* @param count Nombre de processus dans la liste
+* @return Le PID du processus sélectionné, ou -1 si la sélection est invalide
+*/
 int get_selected_pid(process_info_t *list, int count) {
     int selected_index = ui_get_selected_index();
 
@@ -25,6 +42,16 @@ int get_selected_pid(process_info_t *list, int count) {
     return -1;  // Erreur : pas de processus sélectionné
 }
 
+/**
+* @brief Fonction principale du gestionnaire de processus
+*
+* Cette fonction initialise l'interface utilisateur, gère la boucle principale
+* du programme, rafraîchit périodiquement la liste des processus, traite les
+* actions de l'utilisateur et exécute les opérations correspondantes sur les
+* processus (pause, reprise, kill, redémarrage).
+*
+* @param options Options du programme (affichage de l'aide au démarrage)
+*/
 void manager(int options) {
     ui_init();
     if (options != 0) {

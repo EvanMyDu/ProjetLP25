@@ -17,15 +17,22 @@ typedef struct {
     struct timespec last_sample_time;
 } cpu_sample_t;
 
-static cpu_sample_t *cpu_samples = NULL;
-static int cpu_sample_count = 0;
-static unsigned long long previous_total_cpu = 0;
-static struct timespec previous_sample_time;
-static long total_system_memory_kb = 0;
+cpu_sample_t *cpu_samples = NULL;
+int cpu_sample_count = 0;
+unsigned long long previous_total_cpu = 0;
+struct timespec previous_sample_time;
+long total_system_memory_kb = 0;
 
-// Fonction pour lire /proc/meminfo une seule fois
-static long get_total_system_memory(void) {
-    static long cached_total_memory = 0;
+/**
+* @brief Lit et retourne la mémoire totale du système
+*
+* Cette fonction lit le fichier /proc/meminfo pour obtenir la mémoire totale
+* du système. La valeur est mise en cache après la première lecture.
+*
+* @return La mémoire totale du système en kilo-octets, ou 0 en cas d'erreur
+*/
+long get_total_system_memory(void) {
+     long cached_total_memory = 0;
 
     if (cached_total_memory == 0) {
         FILE *f = fopen("/proc/meminfo", "r");
@@ -44,8 +51,16 @@ static long get_total_system_memory(void) {
     return cached_total_memory;
 }
 
-// Trouver un échantillon CPU
-static cpu_sample_t* find_cpu_sample(int pid) {
+/**
+* @brief Recherche un échantillon CPU pour un PID donné
+*
+* Parcourt le tableau des échantillons CPU pour trouver celui correspondant
+* au PID spécifié.
+*
+* @param pid Le PID du processus à rechercher
+* @return Pointeur vers l'échantillon CPU, ou NULL si non trouvé
+*/
+cpu_sample_t* find_cpu_sample(int pid) {
     for (int i = 0; i < cpu_sample_count; i++) {
         if (cpu_samples[i].pid == pid) {
             return &cpu_samples[i];
@@ -54,8 +69,16 @@ static cpu_sample_t* find_cpu_sample(int pid) {
     return NULL;
 }
 
-// Mettre à jour un échantillon CPU
-static void update_cpu_sample(int pid, unsigned long long cpu_time) {
+/**
+* @brief Met à jour ou crée un échantillon CPU pour un processus
+*
+* Si un échantillon existe déjà pour le PID, il est mis à jour avec les
+* nouvelles valeurs. Sinon, un nouvel échantillon est créé.
+*
+* @param pid Le PID du processus
+* @param cpu_time Le temps CPU total du processus
+*/
+void update_cpu_sample(int pid, unsigned long long cpu_time) {
     for (int i = 0; i < cpu_sample_count; i++) {
         if (cpu_samples[i].pid == pid) {
             cpu_samples[i].last_cpu_time = cpu_time;
@@ -75,8 +98,15 @@ static void update_cpu_sample(int pid, unsigned long long cpu_time) {
     cpu_sample_count++;
 }
 
-// Lire le temps CPU total du système
-static unsigned long long read_total_cpu_time(void) {
+/**
+* @brief Lit le temps CPU total du système depuis /proc/stat
+*
+* Cette fonction lit le fichier /proc/stat pour obtenir le temps CPU total
+* du système (somme de user, nice, system, idle, iowait, irq, softirq).
+*
+* @return Le temps CPU total du système en ticks
+*/
+unsigned long long read_total_cpu_time(void) {
     FILE *f = fopen("/proc/stat", "r");
     if (!f) return 0;
 
@@ -88,8 +118,18 @@ static unsigned long long read_total_cpu_time(void) {
     return user + nice + system + idle + iowait + irq + softirq;
 }
 
-// Lire utime et stime d'un processus
-static int read_process_cpu_ticks(int pid, unsigned long *utime, unsigned long *stime) {
+/**
+* @brief Lit les temps CPU utime et stime d'un processus
+*
+* Lit le fichier /proc/[pid]/stat pour obtenir les temps CPU en mode
+* utilisateur (utime) et mode système (stime) d'un processus.
+*
+* @param pid Le PID du processus
+* @param utime Pointeur pour stocker le temps utilisateur
+* @param stime Pointeur pour stocker le temps système
+* @return 0 en cas de succès, -1 en cas d'erreur
+*/
+int read_process_cpu_ticks(int pid, unsigned long *utime, unsigned long *stime) {
     char path[256];
     FILE *f;
 
@@ -138,8 +178,16 @@ static int read_process_cpu_ticks(int pid, unsigned long *utime, unsigned long *
     return 0;
 }
 
-// Lire la mémoire d'un processus (VmRSS - Resident Set Size)
-static int read_process_memory_kb(int pid) {
+/**
+* @brief Lit la mémoire utilisée par un processus
+*
+* Lit le fichier /proc/[pid]/status pour obtenir la mémoire RSS
+* (Resident Set Size) d'un processus en kilo-octets.
+*
+* @param pid Le PID du processus
+* @return La mémoire utilisée en kilo-octets, ou 0 en cas d'erreur
+*/
+int read_process_memory_kb(int pid) {
     char path[256];
     FILE *f;
     char line[256];
@@ -151,7 +199,7 @@ static int read_process_memory_kb(int pid) {
 
     while (fgets(line, sizeof(line), f)) {
         if (strstr(line, "VmRSS:")) {
-            // Format: "VmRSS:     1234 kB"
+            // Format: "VmRSS:     kB"
             char *num_start = strchr(line, ':');
             if (num_start) {
                 num_start++; // Passer le ':'
@@ -168,8 +216,16 @@ static int read_process_memory_kb(int pid) {
     return memory_kb;
 }
 
-// Lire le nom du processus
-static void read_process_name(int pid, char *name) {
+/**
+* @brief Lit le nom d'un processus
+*
+* Tente d'abord de lire le nom depuis /proc/[pid]/comm, et si cela échoue,
+* lit depuis /proc/[pid]/stat.
+*
+* @param pid Le PID du processus
+* @param name Buffer pour stocker le nom du processus
+*/
+void read_process_name(int pid, char *name) {
     char path[256];
     FILE *f;
 
@@ -196,8 +252,16 @@ static void read_process_name(int pid, char *name) {
     fclose(f);
 }
 
-// Lire l'uptime du processus
-static float read_process_uptime(int pid) {
+/**
+* @brief Lit le temps d'exécution d'un processus
+*
+* Calcule le temps d'exécution d'un processus en secondes en utilisant
+* son starttime et l'uptime du système.
+*
+* @param pid Le PID du processus
+* @return Le temps d'exécution en secondes, ou 0.0 en cas d'erreur
+*/
+float read_process_uptime(int pid) {
     char path[256];
     FILE *f;
     unsigned long starttime = 0;
@@ -253,8 +317,16 @@ static float read_process_uptime(int pid) {
     return (uptime > 0) ? uptime : 0.0f;
 }
 
-// Lire l'état du processus
-static char read_process_state(int pid) {
+/**
+* @brief Lit l'état d'un processus
+*
+* Lit le fichier /proc/[pid]/stat pour obtenir l'état actuel du processus
+* (R: running, S: sleeping, D: disk sleep, Z: zombie, etc.).
+*
+* @param pid Le PID du processus
+* @return Le caractère représentant l'état du processus, ou '?' en cas d'erreur
+*/
+char read_process_state(int pid) {
     char path[256];
     FILE *f;
     char state = '?';
@@ -271,7 +343,17 @@ static char read_process_state(int pid) {
     return state;
 }
 
-/* Récupère la liste des processus */
+/**
+* @brief Récupère la liste complète des processus
+*
+* Parcourt le répertoire /proc, lit les informations de chaque processus
+* et calcule les statistiques CPU et mémoire. Les échantillons CPU sont
+* conservés entre les appels pour calculer les pourcentages CPU.
+*
+* @param list Pointeur vers un tableau qui contiendra la liste des processus
+* @param count Pointeur vers un entier qui contiendra le nombre de processus
+* @return 0 en cas de succès, -1 en cas d'erreur
+*/
 int get_process_list(process_info_t **list, int *count) {
     DIR *proc_directory = opendir("/proc");
     if (!proc_directory) {
@@ -349,8 +431,8 @@ int get_process_list(process_info_t **list, int *count) {
             }
 
             // Kernel thread (peut être mis en cache)
-            static int pid_cache = 0;
-            static int is_kernel_cache = 0;
+            int pid_cache = 0;
+            int is_kernel_cache = 0;
             if (pid != pid_cache) {
                 snprintf(path, sizeof(path), "/proc/%d/exe", pid);
                 proc->is_kernel = (access(path, F_OK) == -1) ? 1 : 0;
@@ -405,22 +487,22 @@ int get_process_list(process_info_t **list, int *count) {
 }
 
 /* Tue un processus */
-int kill_process(pid_t pid) {
+int kill_process(int pid) {
 	return kill(pid, SIGKILL);
 }
 
 /* Met un processus en pause */
-int pause_process(pid_t pid) {
+int pause_process(int pid) {
 	return kill(pid, SIGSTOP);
 }
 
 /* Reprend un processus */
-int resume_process(pid_t pid) {
+int resume_process(int pid) {
 	return kill(pid, SIGCONT);
 }
 
 /* Redémarre un processus (SIGTERM + SIGCONT) */
-int restart_process(pid_t pid) {
+int restart_process(int pid) {
 	if (kill(pid, SIGTERM) == -1) {
 		return -1;
 	}
@@ -428,7 +510,7 @@ int restart_process(pid_t pid) {
 }
 
 /* Récupère UN processus précis */
-int get_process(pid_t pid, process_info_t *proc) {
+int get_process(int pid, process_info_t *proc) {
 	char status_file_loc[512];
 	snprintf(status_file_loc, sizeof(status_file_loc),
 	         "/proc/%d/status", pid);

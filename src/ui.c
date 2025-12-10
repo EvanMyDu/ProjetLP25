@@ -2,8 +2,8 @@
 #include <ncurses.h>
 #include <string.h>
 
-static int selected_index = 0;
-static int scroll_offset = 0;
+int selected_index = 0;
+int scroll_offset = 0;
 
 
 /**
@@ -13,7 +13,7 @@ static int scroll_offset = 0;
 * on montre l'ensemble des arguments possibles grâce à ncurses
 *
 */
-void ui_draw_help(void) {
+void ui_draw_help() {
     ui_draw_header();
     mvprintw(1,0,"Options:");
     mvprintw(2,0,"  -h, --help                 Affiche cette aide");
@@ -49,7 +49,7 @@ void ui_draw_help(void) {
 *
 */
 
-void ui_init(void) {
+void ui_init() {
     initscr();
     noecho();
     cbreak();
@@ -67,7 +67,7 @@ void ui_init(void) {
 *
 *
 */
-void ui_cleanup(void) {
+void ui_cleanup() {
     endwin();
 }
 /**
@@ -77,15 +77,22 @@ void ui_cleanup(void) {
 * avec un effet de style inversant la couleur du fond et
 * du texte pour faire un effet barre de menu
 */
-void ui_draw_header(void) {
+void ui_draw_header() {
     attron(A_REVERSE);
     mvprintw(0, 0, " Localhost | F1 Help | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
     attroff(A_REVERSE);
 }
 
-/* Retourne la mémoire totale du système en kilo-octets (mise en cache) */
-static long get_total_memory_kb(void) {
-    static long total_memory = 0;
+/**
+* @brief Retourne la mémoire totale du système en kilo-octets (mise en cache)
+*
+* Lit le fichier /proc/meminfo pour obtenir la mémoire totale du système.
+* La valeur est mise en cache après la première lecture.
+*
+* @return La mémoire totale du système en kilo-octets, ou 0 en cas d'erreur
+*/
+long get_total_memory_kb() {
+    long total_memory = 0;
     if (total_memory == 0) {
         FILE *f = fopen("/proc/meminfo", "r");
         if (f) {
@@ -199,7 +206,7 @@ void ui_draw_processes(process_info_t *list, int count) {
  *         n'est associée à la touche pressée.
  */
 
-ui_action_t ui_get_action(void) {
+ui_action_t ui_get_action() {
     int ch = getch();
     if (ch == ERR) return UI_ACTION_NONE;
 
@@ -245,7 +252,7 @@ ui_action_t ui_get_action(void) {
  * @return int L'index actuellement sélectionné.
  */
 
-int ui_get_selected_index(void) {
+int ui_get_selected_index() {
     return selected_index;
 }
 
