@@ -5,6 +5,14 @@
 static int selected_index = 0;
 static int scroll_offset = 0;
 
+
+/**
+* @brief Fonction qui affiche la page help dans la console (ui)
+*
+* La fonction appelle ui_draw_header qui est l'entête de l'ui puis
+* on montre l'ensemble des arguments possibles grâce à ncurses
+*
+*/
 void ui_draw_help(void) {
     ui_draw_header();
     mvprintw(1,0,"Options:");
@@ -20,6 +28,27 @@ void ui_draw_help(void) {
     mvprintw(20,0,"  -a, --all                  Local + distant");
 }
 
+
+/**
+* @brief Initialise l'interface utilisateur ncurses
+*
+* Initialise la bibliothèque ncurses et configure
+* l'environnement du terminal pour une interface
+* utilisateur interactive :
+*  - désactive l'écho clavier -> noecho()
+*  - active la lecture immédiate des touches ->cbreak
+*  - autorise les touches spéciales (flèches, F1, etc.) -> keypad()
+*  - masque le curseur -> curs_set
+*  - configure une lecture non bloquante du clavier -> timeout()
+*
+* @note Cette fonction doit être appelée une seule fois
+*       au démarrage du programme.
+* @note L'appel à endwin() est nécessaire avant de quitter
+*       le programme pour restaurer l'état du terminal. (Fonction ui_cleanup())
+*
+*
+*/
+
 void ui_init(void) {
     initscr();
     noecho();
@@ -30,17 +59,31 @@ void ui_init(void) {
     refresh();
 }
 
+/**
+* @brief Restaure l'état du terminal à la fin du processus
+*
+* L'appel à endwin() permet de restaurer l'état du terminal
+* à la fin de l'utilisation du programme
+*
+*
+*/
 void ui_cleanup(void) {
     endwin();
 }
-
+/**
+* @brief Affiche l'en-tête de l'interface utilisateur
+*
+* Affiche l'en-tête de l'interface utilisateur grâce à ncurses,
+* avec un effet de style inversant la couleur du fond et
+* du texte pour faire un effet barre de menu
+*/
 void ui_draw_header(void) {
     attron(A_REVERSE);
     mvprintw(0, 0, " Localhost | F1 Help | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
     attroff(A_REVERSE);
 }
 
-// Fonction pour lire mémoire totale
+/* Retourne la mémoire totale du système en kilo-octets (mise en cache) */
 static long get_total_memory_kb(void) {
     static long total_memory = 0;
     if (total_memory == 0) {
@@ -58,6 +101,21 @@ static long get_total_memory_kb(void) {
     }
     return total_memory;
 }
+/**
+ * @brief Affiche la liste des processus dans l'interface utilisateur
+ *
+ * Affiche les processus fournis dans une vue ncurses avec :
+ *  - une barre d'en-tête
+ *  - une ligne de sélection active
+ *  - un défilement vertical automatique
+ *  - l'affichage des informations CPU, mémoire et temps
+ *
+ * La mémoire utilisée par chaque processus est affichée en pourcentage
+ * de la mémoire totale du système.
+ *
+ * @param list Tableau de structures contenant les informations des processus
+ * @param count Nombre de processus dans la liste
+ */
 
 void ui_draw_processes(process_info_t *list, int count) {
     erase();
@@ -126,6 +184,21 @@ void ui_draw_processes(process_info_t *list, int count) {
     refresh();
 }
 
+/**
+ * @brief Lit l'entrée utilisateur et renvoie l'action correspondante.
+ *
+ * Cette fonction lit la touche pressée par l'utilisateur et retourne l'action
+ * correspondante sous forme de `ui_action_t`. Elle gère les actions principales
+ * (aide, recherche, pause, reprise, kill, redémarrage, quitter) ainsi que la
+ * navigation dans la liste via les flèches haut/bas.
+ *
+ * Les touches sont mappées aux actions de l'interface, incluant les touches
+ * fonction (F1-F8) et certaines touches de test (lettres).
+ *
+ * @return ui_action_t L'action détectée, ou `UI_ACTION_NONE` si aucune action
+ *         n'est associée à la touche pressée.
+ */
+
 ui_action_t ui_get_action(void) {
     int ch = getch();
     if (ch == ERR) return UI_ACTION_NONE;
@@ -162,27 +235,30 @@ ui_action_t ui_get_action(void) {
     }
 }
 
+/**
+ * @brief Retourne l'index actuellement sélectionné dans l'interface utilisateur.
+ *
+ * Cette fonction renvoie la valeur de l'index `selected_index`, qui est mise à jour
+ * lors des interactions de l'utilisateur (par exemple avec les touches fléchées
+ * haut et bas dans `ui_get_action()`).
+ *
+ * @return int L'index actuellement sélectionné.
+ */
+
 int ui_get_selected_index(void) {
     return selected_index;
 }
 
-void ui_show_help(void) {
-    timeout(-1);
-    clear();
-    mvprintw(2, 2, "Aide - Raccourcis clavier");
-    mvprintw(4, 4, "F1  : Aide");
-    mvprintw(5, 4, "F4  : Rechercher");
-    mvprintw(6, 4, "F5  : Pause");
-    mvprintw(7, 4, "F6  : Stop");
-    mvprintw(8, 4, "F7  : Kill");
-    mvprintw(9, 4, "F8  : Restart");
-    mvprintw(10,4, "↑↓  : Naviguer");
-    mvprintw(13,4, "Q   : Quitter");
-    refresh();
-    getch();
-    timeout(100);
-}
-
+/**
+ * @brief Affiche un prompt de recherche et récupère l'entrée utilisateur.
+ *
+ * Cette fonction affiche "Recherche:" à l'écran et permet à l'utilisateur
+ * de saisir une chaîne de caractères, qui est ensuite stockée dans le buffer fourni.
+ * La saisie est limitée à "maxlen" caractères.
+ *
+ * @param buffer : Le buffer dans lequel stocker la chaîne saisie.
+ * @param maxlen : La longueur maximale de la chaîne à saisir.
+ */
 void ui_show_search(char *buffer, int maxlen) {
     timeout(-1);
     echo();

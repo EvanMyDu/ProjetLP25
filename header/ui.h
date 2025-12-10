@@ -30,7 +30,6 @@ ui_action_t ui_get_action(void);
 int ui_get_selected_index(void);
 
 /* Fenêtres */
-void ui_show_help(void);
 void ui_show_search(char *buffer, int maxlen);
 
 #endif
