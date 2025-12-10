@@ -21,6 +21,14 @@ typedef struct program_options {
 } program_options_t;
 
 
+/** @brief Gère les différentes options lors de l'appel de l'executable puis donne la main au manager
+*
+* @param argc Nombre d'options donné lors de l'appel de l'executable
+* @param argv Tableau de chaines de char contenant les options rentré lors de l'appel de l'executable
+*             (-h, -c, ...)
+* @return 0 si la fonction a fonctionné comme prévu, 1 si la fonction a rencontré une erreur
+*/
+
 int main(int argc, char **argv) {
     program_options_t options;
     memset(&options, 0, sizeof(options));
@@ -44,7 +52,7 @@ int main(int argc, char **argv) {
     int option_index = 0;
 
     while ((opt = getopt_long(argc, argv, "hc:t:P:l:s:u:p:a", long_options, &option_index)) != -1) {
-        switch (opt) {
+        switch (opt) { // Ce switch permet de savoir quelle(s) option(s) on été donné au programme
             case 'h':
                 options.show_help = 1;
                 break;
@@ -81,10 +89,13 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (options.dry_run) {
+    if (options.dry_run) { // Si l'option dry_run a été donné en options
+        manager_run(); // Lance un dry_run
         printf("Mode test activé\n");
-        return 0;
+        return 0; //Met fin au code
     }
-    manager(options.show_help);
+    manager(options.show_help); // Si il n'y a pas d'erreur lors de la lecture des options ou qu'on est pas
+                                // en dry_run, alors on lance la fonction manager et on lui transmet si il
+                                // doit afficher l'aide ou non
     return 0;
 }
