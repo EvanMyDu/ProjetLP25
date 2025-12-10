@@ -1,4 +1,4 @@
-# ProjetLP25 
+# ProjetLP25
 
 git add . //ajoute tout les nouveaux fichiers
 git status //donne ce qui est nouveau, les modifications,...
@@ -16,3 +16,14 @@ make clean pour supprimer les objets
 
 pour voir un changement d'utilisation de la RAM il faut faire un alt+tab pour changer
 de fenêtre et revenir sur le terminal, sinon la ram ne veut pas s'actualiser
+
+
+
+Rendu du 10 décembre :
+
+&nbsp;	- la fonction search ne marche pas, on peut l'appeler et écrire mais ça ne nous donne rien quand on appui sur entrée
+
+&nbsp;	- la partie réseau n'est pas encore implémenter
+
+
+
