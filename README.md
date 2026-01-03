@@ -25,5 +25,12 @@ Rendu du 10 décembre :
 
 &nbsp;	- la partie réseau n'est pas encore implémenter
 
+Pour que le code compile, il faut installer ssh : 
+
+sudo get-apt update 
+puis
+sudo get-apt install libssh-dev
+
+
 
 
