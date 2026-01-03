@@ -79,7 +79,7 @@ void ui_cleanup() {
 */
 void ui_draw_header() {
     attron(A_REVERSE);
-    mvprintw(0, 0, " Localhost | F1 Help | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
+    mvprintw(0, 0, " Localhost | F1 Help | F2 Next Machine | F3 Previous Machine | F4 Search | F5 Pause | F6 Stop | F7 Kill | F8 Restart | Q Quit ");
     attroff(A_REVERSE);
 }
 
@@ -212,6 +212,10 @@ ui_action_t ui_get_action() {
 
     switch (ch) {
         case KEY_F(1): return UI_ACTION_HELP;
+        case KEY_F(2):
+            return UI_ACTION_NEXT_HOST;
+        case KEY_F(3):
+            return UI_ACTION_PREV_HOST;
         case KEY_F(4): return UI_ACTION_SEARCH;
         case KEY_F(5): return UI_ACTION_PAUSE;
         case KEY_F(6): return UI_ACTION_RESUME;

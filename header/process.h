@@ -1,29 +1,26 @@
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef PROJETLP_PROCESS_H
+#define PROJETLP_PROCESS_H
 
-
-/* Structure d'un processus */
-typedef struct process_info {
+typedef struct {
     int pid;
-    int ppid;
+    char name[256];
+    float cpu_percent;
+    int memory_kb;
+    float time;
     char state;
-    int memory_kb;      // mémoire en kilo-octets
-    int is_kernel;      // 0 ou 1
-    char name[256];     // nom du processus
-    float cpu_percent;  // utilisation CPU en %
-    float time;         // temps écoulé en secondes
+    int ppid;
+    int is_kernel;
 } process_info_t;
 
-/* Récupération de la liste des processus */
+// Fonctions existantes
 int get_process_list(process_info_t **list, int *count);
-
-/* Actions sur un processus */
 int kill_process(int pid);
 int pause_process(int pid);
 int resume_process(int pid);
 int restart_process(int pid);
-
-/* Récupération d'un processus précis */
 int get_process(int pid, process_info_t *proc);
 
-#endif
+// Nouvelle fonction abstraite
+typedef int (*process_fetcher_t)(void *context, process_info_t **list, int *count);
+
+#endif // PROJETLP_PROCESS_H

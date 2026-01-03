@@ -14,7 +14,9 @@ typedef enum {
     UI_ACTION_RESUME,
     UI_ACTION_KILL,
     UI_ACTION_RESTART,
-    UI_ACTION_QUIT
+    UI_ACTION_QUIT,
+    UI_ACTION_NEXT_HOST,
+    UI_ACTION_PREV_HOST
 } ui_action_t;
 
 /* Cycle de vie UI */
