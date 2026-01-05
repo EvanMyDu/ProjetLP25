@@ -31,6 +31,7 @@ sudo get-apt update
 puis
 sudo get-apt install libssh-dev
 
+Il est possible que le dossier obj ne soit pas présent ou soit cacher lorsqu'on clone le projet, il faut donc le créer pour que le makefile puisse marcher
 
 
 
